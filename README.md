@@ -1,4 +1,4 @@
-Dowdy-Dunlin
+Dowdy Dunlin
 ============
 
 Dowdy Dunlin is a minimalist and responsive agenda.
