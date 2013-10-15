@@ -2,7 +2,7 @@
 
 # Dowdy Dunlin
 # Copyright (c) 2013 Pierre Monchalin
-# <http://github.com/piero-la-lune/Dowdy-Dunlin>
+# <http://bugs.derivoile.fr/Dowdy-Dunlin/dashboard>
 # 
 # Permission is hereby granted, free of charge, to any person obtaining
 # a copy of this software and associated documentation files (the
@@ -26,7 +26,7 @@
 define('NAME', 'Dowdy Dunlin');
 define('VERSION', '0.1');
 define('AUTHOR', 'Pierre Monchalin');
-define('URL', 'http://bugs.derivoile.fr/dowdy-dunlin');
+define('URL', 'http://bugs.derivoile.fr/Dowdy-Dunlin/dashboard');
 
 ### Languages
 define('LANGUAGES', 'fr'); # Separated by a comma
