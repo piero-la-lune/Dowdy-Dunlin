@@ -284,9 +284,7 @@ function draw_calendar(month, year) {
 	if (nb < 0) { nb = 6; }
 	for (var i=0; i<nb; i++) { html += '<td class="empty"></td>'; }
 	while (date.getMonth() == month) {
-		var nno = (date.getTime()-today.getTime())/(1000*3600*24);
-		if (nno < 0) { nno = -Math.ceil(Math.abs(nno)); }
-		else { nno = Math.ceil(nno); }
+		var nno = Math.round((date.getTime()-today.getTime())/(1000*3600*24));
 		if (date.getDate() == today.getDate() &&
 			date.getMonth() == today.getMonth() &&
 			date.getFullYear() == today.getFullYear()
