@@ -46,7 +46,7 @@ if (isset($_POST['action']) && isset($_POST['page'])) {
 			if ($n > 0) { $date->add($interval); }
 			else { $date->sub($interval); }
 			$t = $date->getTimestamp();
-			$events = $manager->getWeek($t);
+			$events = $manager->getMonth($t);
 			$h1 = '<h1 class="h1-period">'
 				.Manager::date($t)
 			.'</h1>';
