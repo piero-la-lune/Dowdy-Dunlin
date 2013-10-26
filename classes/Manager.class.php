@@ -60,10 +60,6 @@ class Manager {
 	public function getWeek($day) {
 		$events = array();
 		foreach ($this->events as $id => $e) {
-/*			if (date('YW', $e['day']) == date('YW', $day)) {
-				$e['title'] = date('YW', $e['day']);
-				$events[$id] = $e;
-			}*/
 			if (($e['day'] - $day) < 7*24*3600
 				&& date('W', $e['day']) == date('W', $day)
 			) {

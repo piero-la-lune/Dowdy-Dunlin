@@ -23,7 +23,7 @@
 		'title' => isset($_POST['title']) ? $_POST['title'] : '',
 		'comment' => isset($_POST['comment']) ? $_POST['comment'] : '',
 		'day_start_day' =>
-			isset($_POST['day_start_day']) ? $_POST['day_start_day'] : date('j'),
+			isset($_POST['day_start_day']) ? $_POST['day_start_day'] : '',
 		'day_start_month' =>
 			isset($_POST['day_start_month']) ? $_POST['day_start_month'] : date('n'),
 		'day_start_year' =>
