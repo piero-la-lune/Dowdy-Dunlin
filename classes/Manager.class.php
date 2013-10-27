@@ -63,7 +63,6 @@ class Manager {
 			if (($e['day'] - $day) < 7*24*3600
 				&& date('W', $e['day']) == date('W', $day)
 			) {
-				$e['title'] = date('YW', $e['day']);
 				$events[$id] = $e;
 			}
 		}
@@ -76,15 +75,6 @@ class Manager {
 			if (date('Ym', $e['day']) == date('Ym', $day)) {
 				$events[$id] = $e;
 			}
-		}
-		uasort($events, array($this, 'compare'));
-		return $events;
-	}
-
-	public function get() {
-		$events = array();
-		foreach ($this->events as $id => $e) {
-			$events[$id] = $e;
 		}
 		uasort($events, array($this, 'compare'));
 		return $events;
