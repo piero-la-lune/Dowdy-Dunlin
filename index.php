@@ -1,7 +1,7 @@
 <?php
 
 # Dowdy Dunlin
-# Copyright (c) 2013 Pierre Monchalin
+# Copyright (c) 2013-2014 Pierre Monchalin
 # <http://bugs.derivoile.fr/Dowdy-Dunlin/dashboard>
 # 
 # Permission is hereby granted, free of charge, to any person obtaining

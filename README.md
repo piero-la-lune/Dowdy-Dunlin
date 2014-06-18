@@ -1,5 +1,5 @@
-Dowdy Dunlin
-============
+Dowdy Dunlin 0.1
+================
 
 Dowdy Dunlin is a minimalist and responsive agenda.
 
@@ -22,7 +22,7 @@ Report issues at <http://bugs.derivoile.fr/Dowdy-Dunlin/dashboard>.
 
 Copy all files, run `./` or `./index.php`, configure Dowdy Dunlin and enjoy !
 
-Note : you can delete folder "./public/css/app/", it is useless.
+Note : you can delete folder `./public/css/app/`, it is useless.
 
 ### Backup
 
