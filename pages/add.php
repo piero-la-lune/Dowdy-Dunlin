@@ -42,7 +42,10 @@
 			isset($_POST['hour_end_hour']) ? $_POST['hour_end_hour'] : '',
 		'hour_end_min' =>
 			isset($_POST['hour_end_min']) ? $_POST['hour_end_min'] : '',
-		'tags' => isset($_POST['tags']) ? $_POST['tags'] : ''
+		'tags' => isset($_POST['tags']) ? $_POST['tags'] : '',
+		'caldav' => isset($_POST['caldav']) ? $_POST['caldav'] :
+			(isset($config['caldav']) ? 'oui' : 'non'),
+		'caldav_enabled' => isset($config['caldav'])
 	);
 
 	$content = ''

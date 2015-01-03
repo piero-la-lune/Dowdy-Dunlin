@@ -79,6 +79,9 @@ class Trad {
 	const F_HOUR = 'Heures :';
 	const F_TAGS = 'Tags :';
 	const F_ADD = 'ajouter…';
+	const F_CALDAV = 'Serveur CalDAV :';
+	const F_INTERN = 'Ne pas synchroniser';
+	const F_EXTERN = 'Synchroniser cet événement';
 
 	const F_TIP_PASSWORD = 'Laissez vide pour ne pas le changer.';
 	const F_TIP_URL_REWRITING = 'Laissez vide pour désactiver l\'URL rewriting. Sinon, indiquez le chemin du dossier de Dowdy Dunlin (en commençant et terminant par un "/") par rapport au nom de domaine.';
@@ -115,6 +118,9 @@ class Trad {
 	const A_ERROR_TIME_END = 'L\'heure de fin est invalide.';
 	const A_ERROR_TIMES = 'L\'heure de fin doit être après celle de début.';
 	const A_ERROR_NO_EVENT = 'Aucun événement ne correspond.';
+	const A_ERROR_CALDAV_UPDATE = 'Impossible de mettre à jour l\'événement sur le serveur CalDAV.';
+	const A_ERROR_CALDAV_DELETE = 'Impossible de supprimer l\'événement sur le server CalDAV.';
+	const A_ERROR_CALDAV_ADD = 'Impossible d\'ajouter l\'événement sur le serveur CalDAV.';
 
 	const A_SUCCESS_INSTALL = 'Dowdy Dunlin est maintenant correctement installé. Connectez-vous pour commencer à l\'utiliser.';
 	const A_SUCCESS_SETTINGS = 'Les préférences ont bien été enregistrées.';

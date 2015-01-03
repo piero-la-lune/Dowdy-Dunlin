@@ -27,6 +27,7 @@ class Settings {
 		$this->errors = array();
 		$this->c_global($post);
 		$this->c_user($post, $install);
+		$this->c_caldav($post);
 		$this->save();
 		return $this->errors;
 	}
@@ -78,6 +79,43 @@ class Settings {
 			if (isset($post['password']) && !empty($post['password'])) {
 				$this->config['user']['password'] = Text::getHash($post['password']);
 			}
+		}
+	}
+
+	protected function c_caldav($post) {
+		if (!isset($post['caldav_url']) || !isset($post['caldav_login'])
+			|| !isset($post['caldav_password'])
+		) {
+			return false;
+		}
+		if (!empty($post['caldav_url'])) {
+/*			if (!isset($this->config['caldav'])
+				|| $this->config['caldav']['url'] != $post['caldav_url']
+				|| $this->config['caldav']['user'] != $post['caldav_login']
+				|| $this->config['caldav']['pass'] != $post['caldav_password']
+			) {*/
+				$url = preg_replace('#/$#', '', $post['caldav_url']);
+				$user = $post['caldav_login'];
+				$pass = $post['caldav_password'];
+				$client = new CalDAVClient($url, $user, $pass);
+				$calendar = $client->get_calendar();
+				if ($calendar !== false) {
+					$this->config['caldav'] = array(
+						'url' => $url,
+						'user' => $user,
+						'pass' => $pass,
+						'calendar' => $calendar
+					);
+					$client->set_calendar($calendar);
+					$client->download_calendar();
+				}
+				else {
+					$this->errors[] = 'validate_caldav';
+				}
+/*			}*/
+		}
+		elseif (isset($this->config['caldav'])) {
+
 		}
 	}
 
@@ -166,7 +204,7 @@ class Settings {
 			),
 			'salt' => Text::randomKey(40),
 			'version' => VERSION,
-			'last_update' => false
+			'last_update' => false,
 		);
 	}
 }

@@ -105,7 +105,10 @@ if (isset($_GET['id']) && $event = $manager->getEvent($_GET['id'])) {
 			$_POST['hour_end_min']:
 			substr($event['time_end'], 2, 2),
 		'tags' => isset($_POST['tags']) ?
-			$_POST['tags'] : implode(',', $event['tags'])
+			$_POST['tags'] : implode(',', $event['tags']),
+		'caldav' => isset($_POST['caldav']) ? $_POST['caldav'] :
+			(empty($event['caldav']) ? 'non' : 'oui'),
+		'caldav_enabled' => isset($config['caldav'])
 	);
 
 	$content = '

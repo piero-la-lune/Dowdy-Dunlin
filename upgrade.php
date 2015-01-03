@@ -40,6 +40,16 @@ if (strict_lower($config['version'], '0.2')) {
 
 }
 
+if (strict_lower($config['version'], '0.3')) {
+
+	$events = Text::unhash(get_file(FILE_EVENTS));
+	foreach ($events as $k => $e) {
+		$events[$k]['caldav'] = '';
+	}
+	update_file(FILE_EVENTS, Text::hash($events));
+
+}
+
 $settings = new Settings();
 if ($config['url_rewriting']) { $settings->url_rewriting(); }
 $settings->save();

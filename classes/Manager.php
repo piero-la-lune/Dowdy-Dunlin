@@ -8,6 +8,7 @@
 #	time_start => (string) // HHMM
 #	time_end => (string) // HHMM
 #	tags => (array)
+#	caldav => (string)
 
 class Manager {
 
@@ -189,6 +190,12 @@ class Manager {
 				return Trad::A_ERROR_TIMES;
 			}
 		}
+		if (!isset($post['caldav'])) {
+			$post['do_caldav'] = false;
+		}
+		else {
+			$post['do_caldav'] = ($post['caldav'] == 'oui');
+		}
 		$tags = array();
 		foreach (explode(',', $post['tags']) as $t) {
 			$t = Text::purge($t);
@@ -202,6 +209,23 @@ class Manager {
 		$post = $this->checkPost($post);
 		if (!is_array($post)) { return $post; }
 		$id = Text::randomKey(32);
+		global $config;
+		$caldav = '';
+		if (isset($config['caldav']) && $post['do_caldav']) {
+			$client = new CalDAVClient(
+				$config['caldav']['url'],
+				$config['caldav']['user'],
+				$config['caldav']['pass'],
+				$config['caldav']['calendar']
+			);
+			$rep = $client->add_vevent($id, $post);
+			if ($rep !== false) {
+				$caldav = $rep;
+			}
+			else {
+				return Trad::A_ERROR_CALDAV_ADD;
+			}
+		}
 		$this->events[$id] = array(
 			'title' => Text::chars($post['title']),
 			'comment' => $post['comment'],
@@ -209,9 +233,71 @@ class Manager {
 			'day_end' => $post['day_end'],
 			'time_start' => $post['time_start'],
 			'time_end' => $post['time_end'],
-			'tags' => $post['tags']
+			'tags' => $post['tags'],
+			'caldav' => $caldav
 		);
 		$this->addTags($id, $post['tags']);
+		$this->last_inserted = $id;
+		$this->save();
+		return true;
+	}
+
+	public function addVEvent($url, $e) {
+		if (!isset($e->DTSTART) || !isset($e->DTEND) || !isset($e->SUMMARY)) {
+			# Malformed event, we ignore it
+			return false;
+		}
+		if (isset($e->RRULE) || isset($e->DURATION)) {
+			# This is a repeated event, we ignore it
+			return false;
+		}
+		$start = (string)$e->DTSTART;
+		$sa = explode('T', $start);
+		$end = (string)$e->DTEND;
+		$ea = explode('T', $end);
+		if (strlen($sa[0]) != 8 || strlen($ea[0]) != 8
+			|| !checkdate(substr($sa[0], 4, 2), substr($sa[0], 6, 2), substr($sa[0], 0, 4))
+			|| !checkdate(substr($ea[0], 4, 2), substr($ea[0], 6, 2), substr($ea[0], 0, 4))
+		) {
+			return false;
+		}
+		if (!isset($sa[1]) || !isset($ea[1])) {
+			$day_start = $sa[0];
+			$day_end = date('Ymd', strtotime($ea[0])-3600*24);
+			$time_start = null;
+			$time_end = null;
+		}
+		else {
+			if (strlen($sa[1]) != 6 || strlen($ea[1]) != 6
+				|| (int)substr($sa[1], 0, 2) < 0 || (int)substr($sa[1], 0, 2) > 23
+				|| (int)substr($ea[1], 0, 2) < 0 || (int)substr($ea[1], 0, 2) > 23
+				|| (int)substr($sa[1], 2, 2) < 0 || (int)substr($sa[1], 2, 2) > 59
+				|| (int)substr($ea[1], 2, 2) < 0 || (int)substr($ea[1], 2, 2) > 59
+			) {
+				return false;
+			}
+			$day_start = $sa[0];
+			$day_end = $ea[0];
+			$time_start = substr($sa[1], 0, 4);
+			$time_end = substr($ea[1], 0, 4);
+		}
+		$tags = array();
+		foreach (explode(',', (string)$e->CATEGORIES) as $t) {
+			$t = Text::purge($t);
+			if (!empty($t)) { $tags[] = $t; }
+		}
+		$id = Text::randomKey(32);
+		$this->events[$id] = array(
+			'title' => Text::chars((string)$e->SUMMARY),
+			'comment' => (string)$e->DESCRIPTION,
+			'day_start' => $day_start,
+			'day_end' => $day_end,
+			'time_start' => $time_start,
+			'time_end' => $time_end,
+			'tags' => $tags,
+			'caldav' => $url
+		);
+		$this->addTags($id, $tags);
 		$this->last_inserted = $id;
 		$this->save();
 		return true;
@@ -223,6 +309,38 @@ class Manager {
 		}
 		$post = $this->checkPost($post);
 		if (!is_array($post)) { return $post; }
+		global $config;
+		$caldav = $this->events[$id]['caldav'];
+		if (isset($config['caldav'])) {
+			$client = new CalDAVClient(
+				$config['caldav']['url'],
+				$config['caldav']['user'],
+				$config['caldav']['pass'],
+				$config['caldav']['calendar']
+			);
+			if ($post['do_caldav']) {
+				if (!empty($caldav)) {
+					if (!$client->update_vevent($caldav, $post)) {
+						return Trad::A_ERROR_CALDAV_UPDATE;
+					}
+				}
+				else {
+					$rep = $client->add_vevent($id, $post);
+					if ($rep !== false) {
+						$caldav = $rep;
+					}
+					else {
+						return Trad::A_ERROR_CALDAV_ADD;
+					}
+				}
+			}
+			elseif (!empty($this->events[$id]['caldav'])) {
+				if (!$client->delete_vevent($this->events[$id]['caldav'])) {
+					return Trad::A_ERROR_CALDAV_DELETE;
+				}
+				$caldav = '';
+			}
+		}
 		$this->addTags(
 			$id,
 			array_diff($post['tags'], $this->events[$id]['tags'])
@@ -238,7 +356,8 @@ class Manager {
 			'day_end' => $post['day_end'],
 			'time_start' => $post['time_start'],
 			'time_end' => $post['time_end'],
-			'tags' => $post['tags']
+			'tags' => $post['tags'],
+			'caldav' => $caldav
 		);
 		$this->save();
 		return true;
@@ -248,8 +367,31 @@ class Manager {
 		if (!isset($this->events[$id])) {
 			return Trad::A_ERROR_NO_EVENT;
 		}
+		if (!empty($this->events[$id]['caldav'])) {
+			global $config;
+			$client = new CalDAVClient(
+				$config['caldav']['url'],
+				$config['caldav']['user'],
+				$config['caldav']['pass'],
+				$config['caldav']['calendar']
+			);
+			if (!$client->delete_vevent($this->events[$id]['caldav'])) {
+				return Trad::A_ERROR_CALDAV_DELETE;
+			}
+		}
 		$this->removeTags($id, $this->events[$id]['tags']);
 		unset($this->events[$id]);
+		$this->save();
+		return true;
+	}
+
+	public function deleteVEvents() {
+		foreach ($this->events as $id => $e) {
+			if (!empty($e['caldav'])) {
+				$this->removeTags($id, $e['tags']);
+				unset($this->events[$id]);
+			}
+		}
 		$this->save();
 		return true;
 	}
@@ -337,6 +479,16 @@ class Manager {
 		foreach ($tags as $t) {
 			$list .= '<span class="visible">'.$t.'</span>';
 		}
+		$caldav = '';
+		if ($post['caldav_enabled']) {
+			$caldav = '<label for="caldav">'.Trad::F_CALDAV.'</label>'
+				.'<select id="caldav" name="caldav">'
+				.Text::options(array(
+					'oui' => Trad::F_EXTERN,
+					'non' => Trad::F_INTERN
+				), $post['caldav'])
+				.'</select>';
+		}
 		return ''
 .'<label for="title">'.Trad::F_TITLE.'</label>'
 .'<input type="text" name="title" id="title" value="'.Text::chars($post['title']).'" />'
@@ -366,7 +518,8 @@ class Manager {
 	.'<input type="text" name="addTag" id="addTag" placeholder="'.Trad::F_ADD.'" />'
 	.'<input type="hidden" name="tags" id="tags" value="'.Text::chars($post['tags']).'" />'
 .'</div>'
-.'<div class="pick-tag">'.$list.'</div>';
+.'<div class="pick-tag">'.$list.'</div>'
+.$caldav;
 	}
 
 	public static function pickDate($id, $post) {

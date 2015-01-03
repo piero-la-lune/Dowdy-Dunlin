@@ -24,7 +24,7 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 define('NAME', 'Dowdy Dunlin');
-define('VERSION', '0.2');
+define('VERSION', '0.3');
 define('AUTHOR', 'Pierre Monchalin');
 define('URL', 'http://bugs.derivoile.fr/Dowdy-Dunlin/dashboard');
 
@@ -44,6 +44,7 @@ define('DIR_LANGUAGES', dirname(__FILE__).'/languages/');
 define('FILE_CONFIG', 'config.php');
 define('FILE_EVENTS', 'events.php');
 define('FILE_TAGS', 'tags.php');
+define('FILE_CALDAV', 'caldav.php');
 
 ### Thanks to Sebsauvage and Shaarli for the way I store data
 define('PHPPREFIX', '<?php /* '); # Prefix to encapsulate data in php code.
@@ -55,7 +56,7 @@ mb_internal_encoding('UTF-8');
 ### Load classes
 function loadclass($class) {
 	$class = str_replace('\\', DIRECTORY_SEPARATOR, $class);
-	require dirname(__FILE__).'/classes/'.$class.'.class.php';
+	require dirname(__FILE__).'/classes/'.$class.'.php';
 }
 spl_autoload_register('loadClass');
 
@@ -63,16 +64,16 @@ spl_autoload_register('loadClass');
 if (is_file(DIR_DATABASE.FILE_CONFIG)) {
 	$config = Text::unhash(get_file(FILE_CONFIG));
 	# We need $config to load the correct language
-	require DIR_LANGUAGES.'Trad_'.$config['language'].'.class.php';
+	require DIR_LANGUAGES.'Trad_'.$config['language'].'.php';
 }
 else {
 	# We load language first because we need it in $config
 	if (isset($_POST['language']) && Text::check_language($_POST['language'])) {
 		# Needed at installation
-		require DIR_LANGUAGES.'Trad_'.$_POST['language'].'.class.php';
+		require DIR_LANGUAGES.'Trad_'.$_POST['language'].'.php';
 	}
 	else {
-		require DIR_LANGUAGES.'Trad_'.DEFAULT_LANGUAGE.'.class.php';
+		require DIR_LANGUAGES.'Trad_'.DEFAULT_LANGUAGE.'.php';
 	}
 	$config = Settings::get_default_config(DEFAULT_LANGUAGE);
 }
@@ -226,6 +227,7 @@ function check_file($filename, $content = '') {
 check_dir('');
 check_file(FILE_EVENTS, Text::hash(array()));
 check_file(FILE_TAGS, Text::hash(array()));
+check_file(FILE_CALDAV, Text::hash(array()));
 check_file('.htaccess', "Allow from none\nDeny from all\n");
 
 ### Cron jobs
@@ -233,6 +235,16 @@ if (isset($cron_job) && $cron_job == true) {
 	$manager = Manager::getInstance();
 	echo 'Cron jobs for Dowdy Dunlin ('.date('r').')'."\n";
 	echo '==========================================================='."\n\n";
+	if (isset($config['caldav'])) {
+		echo 'Retrieving and updating events from '.$config['caldav']['url'].'.'."\n";
+		$client = new CalDAVClient(
+			$config['caldav']['url'],
+			$config['caldav']['user'],
+			$config['caldav']['pass'],
+			$config['caldav']['calendar']
+		);
+		$client->refresh_events();
+	}
 	echo 'Done.'."\n";
 	exit;
 }
