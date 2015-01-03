@@ -154,7 +154,11 @@ class Manager {
 		$emonth = $post['day_end_month'];
 		if (strlen($emonth) < 2) { $emonth = '0'.$emonth; }
 		$eday = $post['day_end_day'];
-		if (empty($eday)) { $eday = date('d'); }
+		if (empty($eday)) {
+			$eday = $sday;
+			$emonth = $smonth;
+			$eyear = $syear;
+		}
 		if (strlen($eday) < 2) { $eday = '0'.$eday; }
 		if (!checkdate($emonth, $eday, $eyear)) {
 			return Trad::A_ERROR_DAY_END;
