@@ -17,7 +17,8 @@ if (isset($_POST['action']) && isset($_POST['page'])) {
 			else { $date->sub($interval); }
 			$t = $date->getTimestamp();
 			$events = $manager->getDay($t);
-			$h1 = '<h1 class="h1-period">'.Manager::date($t).'</h1>';
+			$h1 = '<h1 class="h1-period">'.Manager::date(date('Ymd', $t)).'</h1>';
+			$days = array(date('Ymd', $t));
 		}
 		if ($_POST['page'] == 'week') {
 			$interval = new DateInterval('P'.abs($n).'W');
@@ -26,16 +27,25 @@ if (isset($_POST['action']) && isset($_POST['page'])) {
 			else { $date->sub($interval); }
 			$t = $date->getTimestamp();
 			$events = $manager->getWeek($t);
+			$days = array();
 			$start = $t;
 			$end = $t;
-			while (date('W', $start) == date('W', $t)) { $start -= 60*60*24; }
-			while (date('W', $end) == date('W', $t)) { $end += 60*60*24; }
+			while (date('W', $start) == date('W', $t)) {
+				$days[date('Ymd', $start)] = true;
+				$start -= 60*60*24;
+			}
+			while (date('W', $end) == date('W', $t)) {
+				$days[date('Ymd', $end)] = true;
+				$end += 60*60*24;
+			}
 			$start += 60*60*24;
 			$end -= 60*60*24;
+			$days = array_keys($days);
+			sort($days);
 			$h1 = '<h1 class="h1-period">'
 				.str_replace(
 					array('%from%', '%to%'),
-					array(Manager::date($start), Manager::date($end)),
+					array(Manager::date(date('Ymd', $start)), Manager::date(date('Ymd', $end))),
 					Trad::S_FROMTO_DAY
 				)
 			.'</h1>';
@@ -48,12 +58,19 @@ if (isset($_POST['action']) && isset($_POST['page'])) {
 			$t = $date->getTimestamp();
 			$events = $manager->getMonth($t);
 			$h1 = '<h1 class="h1-period">'
-				.Manager::date($t)
+				.Manager::date(date('Ymd', $t))
 			.'</h1>';
+			$days = array();
+			$month = date('Ym');
+			$day = strtotime($month.'01');
+			while(date('Ym', $day) == $month) {
+				$days[] = date('Ymd', $day);
+				$day += 3600*24;
+			}
 		}
 		die(json_encode(array(
 			'status' => 'success',
-			'html' => $h1.Manager::previewEvents($events)
+			'html' => $h1.Manager::previewEvents($events, $days)
 		)));
 	}
 }

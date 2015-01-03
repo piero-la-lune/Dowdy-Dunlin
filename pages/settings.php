@@ -58,8 +58,26 @@
 	<input type="password" name="password" id="password" />
 	<p class="p-tip">'.Trad::F_TIP_PASSWORD.'</p>
 
+	<p>&nbsp;</p>
+	<h2>'.Trad::T_CALDAV_SETTINGS.'</h2>
+
+	<p class="p-tip">'.Trad::F_TIP_CALDAV.'</p>
+
+	<label for="caldav_url">'.Trad::F_URL.'</label>
+	<input type="url" name="caldav_url" id="caldav_url" value="'
+		.(isset($config['caldav']) ? Text::chars($config['caldav']['url']) : '')
+	.'" />
+	<label for="caldav_login">'.Trad::F_USERNAME.'</label>
+	<input type="text" name="caldav_login" id="caldav_login" value="'
+		.(isset($config['caldav']) ? Text::chars($config['caldav']['user']) : '')
+	.'" />
+	<label for="caldav_password">'.Trad::F_PASSWORD.'</label>
+	<input type="password" name="caldav_password" id="caldav_password" />
+	<p class="p-tip">'.Trad::F_TIP_PASSWORD.'</p>
+
 	<p class="p-submit"><input type="submit" value="'.Trad::V_SAVE.'" /></p>
 	<input type="hidden" name="action" value="edit" />
+
 </form>
 
 	';

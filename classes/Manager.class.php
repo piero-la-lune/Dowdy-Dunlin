@@ -3,8 +3,10 @@
 # Events model :
 #	title => escaped (string)
 #	comment => (string)
-#	day => (int) // timestamp
-#	duration => (int) // seconds
+#	day_start => (string) // AAAAMMJJ
+#	day_end => (string) // AAAAMMJJ
+#	time_start => (string) // HHMM
+#	time_end => (string) // HHMM
 #	tags => (array)
 
 class Manager {
@@ -48,9 +50,10 @@ class Manager {
 	}
 
 	public function getDay($day) {
+		$day = date('Ymd', $day);
 		$events = array();
 		foreach ($this->events as $id => $e) {
-			if (date('Ymd', $e['day']) == date('Ymd', $day)) {
+			if ($e['day_start'] <= $day && $e['day_end'] >= $day) {
 				$events[$id] = $e;
 			}
 		}
@@ -58,10 +61,16 @@ class Manager {
 		return $events;
 	}
 	public function getWeek($day) {
+		$aweek = 7*24*3600;
+		$week = (int)date('W', $day);
 		$events = array();
 		foreach ($this->events as $id => $e) {
-			if (($e['day'] - $day) < 7*24*3600
-				&& date('W', $e['day']) == date('W', $day)
+			$dst = strtotime($e['day_start']);
+			$det = strtotime($e['day_end']);
+			if ((int)date('W', $dst) <= $week
+				&& (int)date('W', $det) >= $week
+				&& ($dst - $aweek) <= $day
+				&& ($det + $aweek) >= $day
 			) {
 				$events[$id] = $e;
 			}
@@ -71,8 +80,11 @@ class Manager {
 	}
 	public function getMonth($day) {
 		$events = array();
+		$month = date('Ym', $day);
 		foreach ($this->events as $id => $e) {
-			if (date('Ym', $e['day']) == date('Ym', $day)) {
+			if (substr($e['day_start'], 0, -2) <= $month
+				&& substr($e['day_end'], 0, -2) >= $month
+			) {
 				$events[$id] = $e;
 			}
 		}
@@ -81,8 +93,12 @@ class Manager {
 	}
 
 	public function compare($a, $b) {
-		if ($a['day'] < $b['day']) { return -1; }
-		if ($a['day'] == $b['day']) { return 0; }
+		if ($a['day_start'] < $b['day_start']) { return -1; }
+		elseif ($a['day_start'] == $b['day_start']) {
+			if ($a['time_start'] < $b['time_start']) { return -1; }
+			elseif ($a['time_start'] == $b['time_start']) { return 0; }
+			return 1;
+		}
 		return 1;
 	}
 
@@ -119,17 +135,59 @@ class Manager {
 		) {
 			return Trad::A_ERROR_FORM;
 		}
-		if (empty($post['day_start_year'])) {
-			$post['day_start_year'] = date('Y');
+		$syear = $post['day_start_year'];
+		if (empty($syear)) { $syear = date('Y'); }
+		while (strlen($syear) < 4) { $syear = '0'.$syear; }
+		$smonth = $post['day_start_month'];
+		if (strlen($smonth) < 2) { $smonth = '0'.$smonth; }
+		$sday = $post['day_start_day'];
+		if (empty($sday)) { $sday = date('d'); }
+		if (strlen($sday) < 2) { $sday = '0'.$sday; }
+		if (!checkdate($smonth, $sday, $syear)) {
+			return Trad::A_ERROR_DAY_START;
 		}
-		if (empty($post['day_start_day'])) {
-			$post['day_start_day'] = date('d');
+		$post['day_start'] = $syear.$smonth.$sday;
+		$eyear = $post['day_end_year'];
+		if (empty($eyear)) { $eyear = date('Y'); }
+		while (strlen($eyear) < 4) { $eyear = '0'.$eyear; }
+		$emonth = $post['day_end_month'];
+		if (strlen($emonth) < 2) { $emonth = '0'.$emonth; }
+		$eday = $post['day_end_day'];
+		if (empty($eday)) { $eday = date('d'); }
+		if (strlen($eday) < 2) { $eday = '0'.$eday; }
+		if (!checkdate($emonth, $eday, $eyear)) {
+			return Trad::A_ERROR_DAY_END;
 		}
-		if (empty($post['day_end_year'])) {
-			$post['day_end_year'] = $post['day_start_year'];
+		$post['day_end'] = $eyear.$emonth.$eday;
+		if ($post['day_start'] > $post['day_end']) {
+			return Trad::A_ERROR_DAYS;
 		}
-		if (empty($post['day_end_day'])) {
-			$post['day_end_day'] = $post['day_start_day'];
+		$shour = (int)$post['hour_start_hour'];
+		$smin = (int)$post['hour_start_min'];
+		$ehour = (int)$post['hour_end_hour'];
+		$emin = (int)$post['hour_end_min'];
+		if ((!$shour && !$smin) || (!$ehour && !$emin)) {
+			$post['time_start'] = null;
+			$post['time_end'] = null;
+		}
+		else {
+			if ($shour < 0 || $shour > 23 || $smin < 0 || $smin > 59) {
+				return Trad::A_ERROR_TIME_START;
+			}
+			if ($ehour < 0 || $ehour > 23 || $emin < 0 || $emin > 59) {
+				return Trad::A_ERROR_TIME_END;
+			}
+			if ($shour < 10) { $shour = '0'.$shour; }
+			if ($smin < 10) { $smin = '0'.$smin; }
+			$post['time_start'] = $shour.$smin;
+			if ($ehour < 10) { $ehour = '0'.$ehour; }
+			if ($emin < 10) { $emin = '0'.$emin; }
+			$post['time_end'] = $ehour.$emin;
+			if ($post['day_start'] == $post['day_end']
+				&& $post['time_end'] < $post['time_start']
+			) {
+				return Trad::A_ERROR_TIMES;
+			}
 		}
 		$tags = array();
 		foreach (explode(',', $post['tags']) as $t) {
@@ -143,92 +201,28 @@ class Manager {
 	public function add($post) {
 		$post = $this->checkPost($post);
 		if (!is_array($post)) { return $post; }
-
-		$day_start = new DateTime();
-		$day_start->setDate(
-			intval($post['day_start_year']),
-			intval($post['day_start_month']),
-			intval($post['day_start_day'])
+		$id = Text::randomKey(32);
+		$this->events[$id] = array(
+			'title' => Text::chars($post['title']),
+			'comment' => $post['comment'],
+			'day_start' => $post['day_start'],
+			'day_end' => $post['day_end'],
+			'time_start' => $post['time_start'],
+			'time_end' => $post['time_end'],
+			'tags' => $post['tags']
 		);
-		$day_start->setTime(
-			intval($post['hour_start_hour']),
-			intval($post['hour_start_min'])
-		);
-		$day_start2 = clone $day_start;
-		$day_start2->setTime(
-			intval($post['hour_end_hour']),
-			intval($post['hour_end_min'])
-		);
-
-		$duration = $day_start2->getTimestamp()-$day_start->getTimestamp();
-		if ($duration < 0
-			|| $day_start->format('Ymd') != $day_start2->format('Ymd')
-		) {
-			$duration = 0;
-		}
-
-		$day_end = new DateTime();
-		$day_end->setDate(
-			intval($post['day_end_year']),
-			intval($post['day_end_month']),
-			intval($post['day_end_day'])
-		);
-		$day_end->setTime(
-			intval($post['hour_end_hour']),
-			intval($post['hour_end_min'])
-		);
-		if ($day_end->getTimestamp() < $day_start->getTimestamp()) {
-			$day_end = clone $day_start;
-		}
-
-		$this->last_inserted = null;
-
-		$one_day = new DateInterval('P1D');
-		while ($day_start->getTimestamp() <= $day_end->getTimestamp()) {
-			$id = Text::randomKey(32);
-			if (!$this->last_inserted) {
-				$this->last_inserted = $id;
-			}
-			$this->events[$id] = array(
-				'title' => Text::chars($post['title']),
-				'comment' => $post['comment'],
-				'day' => $day_start->getTimestamp(),
-				'duration' => $duration,
-				'tags' => $post['tags']
-			);
-			$this->addTags($id, $post['tags']);
-			$day_start->add($one_day);
-		}
-
+		$this->addTags($id, $post['tags']);
+		$this->last_inserted = $id;
 		$this->save();
 		return true;
 	}
 
 	public function edit($id, $post) {
+		if (!isset($this->events[$id])) {
+			return Trad::A_ERROR_NO_EVENT;
+		}
 		$post = $this->checkPost($post);
 		if (!is_array($post)) { return $post; }
-
-		$day = new DateTime();
-		$day->setDate(
-			intval($post['day_start_year']),
-			intval($post['day_start_month']),
-			intval($post['day_start_day'])
-		);
-		$day->setTime(
-			intval($post['hour_start_hour']),
-			intval($post['hour_start_min'])
-		);
-		$day2 = clone $day;
-		$day2->setTime(
-			intval($post['hour_end_hour']),
-			intval($post['hour_end_min'])
-		);
-
-		$duration = $day2->getTimestamp()-$day->getTimestamp();
-		if ($duration < 0 || $day->format('Ymd') != $day2->format('Ymd')) {
-			$duration = 0;
-		}
-
 		$this->addTags(
 			$id,
 			array_diff($post['tags'], $this->events[$id]['tags'])
@@ -237,20 +231,23 @@ class Manager {
 			$id,
 			array_diff($this->events[$id]['tags'], $post['tags'])
 		);
-
 		$this->events[$id] = array(
 			'title' => Text::chars($post['title']),
 			'comment' => $post['comment'],
-			'day' => $day->getTimestamp(),
-			'duration' => $duration,
+			'day_start' => $post['day_start'],
+			'day_end' => $post['day_end'],
+			'time_start' => $post['time_start'],
+			'time_end' => $post['time_end'],
 			'tags' => $post['tags']
 		);
-
 		$this->save();
 		return true;
 	}
 
 	public function delete($id) {
+		if (!isset($this->events[$id])) {
+			return Trad::A_ERROR_NO_EVENT;
+		}
 		$this->removeTags($id, $this->events[$id]['tags']);
 		unset($this->events[$id]);
 		$this->save();
@@ -275,61 +272,47 @@ class Manager {
 		}
 	}
 
-	public static function previewEvents($events) {
+	public static function previewEvents($events, $days) {
 		$html = '';
-		$date = null;
-		$evt = array();
-		foreach ($events as $id => $e) {
-			if (date('Ymd', $e['day']) != date('Ymd', $date)) {
-				$html .= self::previewList($evt, $date);
-				$evt = array($id => $e);
-				$date = $e['day'];
+		foreach ($days as $day) {
+			$day_html = '';
+			foreach ($events as $id => $e) {
+				if ($e['day_start'] <= $day && $e['day_end'] >= $day) {
+					$day_html .= self::preview($id, $e, $day);
+				}
 			}
-			else {
-				$evt[$id] = $e;
+			if (!empty($day_html)) {
+				$day_html = '<div class="div-day">'.self::date($day).'</div>'
+					.$day_html;
 			}
-		}
-		return $html.self::previewList($evt, $date);
-	}
-	protected static function previewList($events, $date) {
-		if ($date == null) { return ''; }
-		$class = 'div-day';
-		if (date('Ymd', $date) < date('Ymd')) {
-			$class .= ' done';
-		}
-		$html = '<div class="'.$class.'">'.self::date($date).'</div>';
-		foreach ($events as $id => $e) {
-			$html .= self::preview($id, $e);
+			$html .= $day_html;
 		}
 		return $html;
 	}
-	protected static function preview($id, $event) {
+	protected static function preview($id, $event, $day) {
 		global $config;
 		$tags = Manager::tagsList($event['tags'], false);
 		if (!empty($tags)) { $tags = '<p>'.$tags.'</p>'; }
-		$class = 'div-event';
-		if ($event['duration'] != 0) {
-			$end = $event['day']+$event['duration'];
-			if ($end < time()) {
-				$class .= ' done';
-			}
-			$hour = str_replace(
+		# $class = 'div-event';
+		$hour = array('', '');
+		if ($event['time_start'] && $day == $event['day_start']) {
+			$hour[0] = $event['time_start'];
+		}
+		if ($event['time_end'] && $day == $event['day_end']) {
+			$hour[1] = $event['time_end'];
+		}
+		if ($hour != array('', '')) {
+			$hour = '['.str_replace(
 				array('%start%', '%end%'),
-				array(date('Hi', $event['day']), date('Hi', $end)),
+				array($hour[0], $hour[1]),
 				Trad::S_PERIOD
-			);
+			).'] ';
 		}
-		else {
-			if (date('Ymd', $event['day']) < date('Ymd')) {
-				$class .= ' done';
-			}
-			$hour = Trad::S_ALL_DAY;
-		}
-		
+		else { $hour = ''; }
 		return ''
-.'<div class="'.$class.'" id="event-'.$id.'">'
+.'<div class="div-event" id="event-'.$id.'">'
 	.'<h2>'
-		.'['.$hour.'] '
+		.$hour
 		.'<a href="'.Url::parse('events/'.$id).'">'
 			.$event['title']
 		.'</a>'
@@ -454,13 +437,13 @@ class Manager {
 
 	public static function date($date) {
 		return ''
-			.'<span class="span-day">'.date('d', $date).'</span>'
+			.'<span class="span-day">'.(int)substr($date, 6, 2).'</span>'
 			.' '
 			.'<span class="span-month">'
-				.(Manager::$months[date('n', $date)])
+				.(Manager::$months[(int)substr($date, 4, 2)])
 			.'</span>'
 			.' '
-			.'<span class="span-year">'.date('Y', $date).'</span>'
+			.'<span class="span-year">'.(int)substr($date, 0, 4).'</span>'
 		;
 	}
 

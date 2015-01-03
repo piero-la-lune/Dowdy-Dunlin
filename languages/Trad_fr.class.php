@@ -46,7 +46,8 @@ class Trad {
 	const S_EMPTY_COMMENT = 'Aucun commentaire…';
 	const S_FROMTO_DAY = 'du %from%<br />au %to%';
 	const S_FROMTO_HOUR = 'de %from% à %to%';
-	const S_ON = 'le %day% de %start% à %end%';
+	const S_FROMTO_DAY_HOUR = 'du %day_start% %time_start%<br />au %day_end% %time_end%';
+	const S_ON = 'le %day%';
 	const S_ALL_DAY = 'Journée';
 	const S_PERIOD = '%start% - %end%';
 
@@ -81,6 +82,7 @@ class Trad {
 
 	const F_TIP_PASSWORD = 'Laissez vide pour ne pas le changer.';
 	const F_TIP_URL_REWRITING = 'Laissez vide pour désactiver l\'URL rewriting. Sinon, indiquez le chemin du dossier de Dowdy Dunlin (en commençant et terminant par un "/") par rapport au nom de domaine.';
+	const F_TIP_CALDAV = 'Pour synchroniser Dowdy Dunlin avec un serveur CalDAV. Attention : le mot de passe sera enregistré en clair.';
 
 		# Titres
 
@@ -91,6 +93,7 @@ class Trad {
 	const T_SETTINGS = 'Préférences';
 	const T_GLOBAL_SETTINGS = 'Réglages généraux';
 	const T_USER_SETTINGS = 'Utilisateur';
+	const T_CALDAV_SETTINGS = 'CalDAV';
 	const T_HOME = 'Aujourd\'hui';
 	const T_WEEK = 'Cette semaine';
 	const T_MONTH = 'Ce mois';
@@ -105,6 +108,13 @@ class Trad {
 	const A_ERROR_EMPTY_TITLE = 'Merci de donner un titre à l\'événement.';
 	const A_ERROR_AJAX = 'Une erreur est survenue. Merci de réessayer.';
 	const A_ERROR_AJAX_LOGIN = 'Vous êtes déconnecté. Raffraichissez la page, connectez-vous, puis vous pourrez réessayer.';
+	const A_ERROR_DAY_START = 'Le jour de début est invalide.';
+	const A_ERROR_DAY_END = 'Le jour de fin est invalide.';
+	const A_ERROR_DAYS = 'La date de fin doit être après celle de début.';
+	const A_ERROR_TIME_START = 'L\'heure de début est invalide.';
+	const A_ERROR_TIME_END = 'L\'heure de fin est invalide.';
+	const A_ERROR_TIMES = 'L\'heure de fin doit être après celle de début.';
+	const A_ERROR_NO_EVENT = 'Aucun événement ne correspond.';
 
 	const A_SUCCESS_INSTALL = 'Dowdy Dunlin est maintenant correctement installé. Connectez-vous pour commencer à l\'utiliser.';
 	const A_SUCCESS_SETTINGS = 'Les préférences ont bien été enregistrées.';
@@ -115,7 +125,8 @@ class Trad {
 	const A_CONFIRM_DELETE = 'Voulez-vous vraiment supprimer cet événement ?';
 
 	public static $settings = array(
-		'validate_url' => 'L\'url n\'est pas valide.'
+		'validate_url' => 'L\'url n\'est pas valide.',
+		'validate_caldav' => 'Impossible de se connecter au serveur CalDAV.'
 	);
 
 }

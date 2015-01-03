@@ -29,20 +29,42 @@ if (isset($_GET['id']) && $event = $manager->getEvent($_GET['id'])) {
 	$title = $event['title'];
 
 	$comment = \Michelf\Markdown::defaultTransform($event['comment']);
-	if ($event['duration'] != 0) {
-		$date = str_replace(
-			array('%day%', '%start%', '%end%'),
-			array(
-				Manager::date($event['day']),
-				'<span class="span-hour">'.date('Hi', $event['day']).'</span>',
-				'<span class="span-hour">'
-					.date('Hi', $event['day']+$event['duration']).'</span>'
-			),
-			Trad::S_ON
-		);
+	if ($event['day_start'] == $event['day_end']) {
+		$date = str_replace('%day%', Manager::date($event['day_start']), Trad::S_ON);
+		if ($event['time_start']) {
+			$date .= ' '.str_replace(
+				array('%from%', '%to%'),
+				array(
+					'<span class="span-hour">'.$event['time_start'].'</span>',
+					'<span class="span-hour">'.$event['time_end'].'</span>'
+				),
+				Trad::S_FROMTO_HOUR
+			);
+		}
 	}
 	else {
-		$date = Manager::date($event['day']);
+		if ($event['time_start'] && $event['time_end']) {
+			$date = str_replace(
+				array('%day_start%', '%time_start%', '%day_end%', '%time_end%'),
+				array(
+					Manager::date($event['day_start']),
+					'<span class="span-hour">'.$event['time_start'].'</span>',
+					Manager::date($event['day_end']),
+					'<span class="span-hour">'.$event['time_end'].'</span>'
+				),
+				Trad::S_FROMTO_DAY_HOUR
+			);
+		}
+		else {
+			$date = str_replace(
+				array('%from%', '%to%'),
+				array(
+					Manager::date($event['day_start']),
+					Manager::date($event['day_end'])
+				),
+				Trad::S_FROMTO_DAY
+			);
+		}
 	}
 
 	$post = array(
@@ -54,34 +76,34 @@ if (isset($_GET['id']) && $event = $manager->getEvent($_GET['id'])) {
 			$event['comment'],
 		'day_start_day' => isset($_POST['day_start_day']) ?
 			$_POST['day_start_day']:
-			date('j', $event['day']),
+			substr($event['day_start'], 6, 2),
 		'day_start_month' => isset($_POST['day_start_month']) ?
 			$_POST['day_start_month']:
-			date('n', $event['day']),
+			substr($event['day_start'], 4, 2),
 		'day_start_year' => isset($_POST['day_start_year']) ?
 			$_POST['day_start_year']:
-			date('Y', $event['day']),
+			substr($event['day_start'], 0, 4),
 		'day_end_day' => isset($_POST['day_end_day']) ?
 			$_POST['day_end_day']:
-			date('j', $event['day']),
+			substr($event['day_end'], 6, 2),
 		'day_end_month' => isset($_POST['day_end_month']) ?
 			$_POST['day_end_month']:
-			date('n', $event['day']),
+			substr($event['day_end'], 4, 2),
 		'day_end_year' => isset($_POST['day_end_year']) ?
 			$_POST['day_end_year']:
-			date('Y', $event['day']),
+			substr($event['day_end'], 0, 4),
 		'hour_start_hour' => isset($_POST['hour_start_hour']) ?
 			$_POST['hour_start_hour']:
-			date('H', $event['day']),
+			substr($event['time_start'], 0, 2),
 		'hour_start_min' => isset($_POST['hour_start_min']) ?
 			$_POST['hour_start_min']:
-			date('i', $event['day']),
+			substr($event['time_start'], 2, 2),
 		'hour_end_hour' => isset($_POST['hour_end_hour']) ?
 			$_POST['hour_end_hour']:
-			date('H', $event['day']+$event['duration']),
+			substr($event['time_end'], 0, 2),
 		'hour_end_min' => isset($_POST['hour_end_min']) ?
 			$_POST['hour_end_min']:
-			date('i', $event['day']+$event['duration']),
+			substr($event['time_end'], 2, 2),
 		'tags' => isset($_POST['tags']) ?
 			$_POST['tags'] : implode(',', $event['tags'])
 	);
