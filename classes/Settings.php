@@ -89,11 +89,11 @@ class Settings {
 			return false;
 		}
 		if (!empty($post['caldav_url'])) {
-/*			if (!isset($this->config['caldav'])
+			if (!isset($this->config['caldav'])
 				|| $this->config['caldav']['url'] != $post['caldav_url']
 				|| $this->config['caldav']['user'] != $post['caldav_login']
 				|| $this->config['caldav']['pass'] != $post['caldav_password']
-			) {*/
+			) {
 				$url = preg_replace('#/$#', '', $post['caldav_url']);
 				$user = $post['caldav_login'];
 				$pass = $post['caldav_password'];
@@ -112,10 +112,13 @@ class Settings {
 				else {
 					$this->errors[] = 'validate_caldav';
 				}
-/*			}*/
+			}
 		}
 		elseif (isset($this->config['caldav'])) {
-
+			unset($this->config['caldav']);
+			$manager = Manager::getInstance();
+			$manager->deleteVEvents();
+			update_file(FILE_CALDAV, Text::hash(array()));
 		}
 	}
 
